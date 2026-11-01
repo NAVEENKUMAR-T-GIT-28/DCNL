@@ -1,9 +1,20 @@
 # Data Communication and Networking Laboratory
 ## Complete Record – 12 Regular Experiments
 
-**Sections included for every experiment:** AIM, ALGORITHM, PROGRAM / COMMANDS, OUTPUT and RESULT.
+## Table of Contents
 
-> **Exam note:** This document follows the sequence and scope of the uploaded DCN lab record. Python programs have been formatted and corrected where the PDF's line wrapping or indentation made them invalid. Outputs are representative; random simulations and live network commands may produce different results. For Packet Tracer experiments, configuration is performed through the device GUI and Cisco IOS CLI rather than Python.
+1. [Study of Network Devices, Cables and Basic Network Utilities](#experiment-1--study-of-network-devices-cables-and-basic-network-utilities)
+2. [Configuration of IP Address and Subnetting](#experiment-2--configuration-of-ip-address-and-subnetting-using-cisco-packet-tracer)
+3. [Implementation of CRC Error Detection](#experiment-3--implementation-of-crc-error-detection)
+4. [Implementation of Hamming Code](#experiment-4--implementation-of-hamming-code)
+5. [Implementation of Stop-and-Wait ARQ Protocol](#experiment-5--implementation-of-stop-and-wait-arq-protocol)
+6. [Implementation of Sliding Window Protocol](#experiment-6--implementation-of-sliding-window-protocol)
+7. [TCP Client-Server Communication](#experiment-7--implementation-of-tcp-client-server-communication)
+8. [UDP Client-Server Communication](#experiment-8--implementation-of-udp-client-server-communication)
+9. [Distance Vector Routing Algorithm](#experiment-9--implementation-of-distance-vector-routing-algorithm)
+10. [Link State Routing Algorithm](#experiment-10--implementation-of-link-state-routing-algorithm)
+11. [Routing Protocols and VLAN Configuration](#experiment-11--simulation-of-routing-protocols-and-vlan-configuration-using-cisco-packet-tracer)
+12. [Network Traffic Analysis and Application Layer Services](#experiment-12--analysis-of-network-traffic-and-application-layer-services)
 
 ---
 
