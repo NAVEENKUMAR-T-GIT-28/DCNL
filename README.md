@@ -599,48 +599,46 @@ To implement TCP client-server communication using Python socket programming.
 
 Save the following as two separate files.
 
-### File 1: `server.py`
+### File 1: `TCP.py`
 
 ```python
 import socket
+import threading
 
-HOST = "127.0.0.1"
-PORT = 5000
-
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind((HOST, PORT))
+def server():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(("127.0.0.1", 5000))
     server_socket.listen(1)
 
-    print("TCP Server is waiting for a connection...")
-
     conn, addr = server_socket.accept()
-    with conn:
-        print("Client connected:", addr)
+    print("Client connected:", addr)
 
-        message = conn.recv(1024).decode("utf-8")
-        print("Message from client:", message)
+    message = conn.recv(1024).decode()
+    print("Message from client:", message)
 
-        response = "Hello Client, message received!"
-        conn.sendall(response.encode("utf-8"))
-```
+    response = "Hello Client, message received!"
+    conn.send(response.encode())
 
-### File 2: `client.py`
+    conn.close()
+    server_socket.close()
 
-```python
-import socket
 
-HOST = "127.0.0.1"
-PORT = 5000
+# Start server
+server_thread = threading.Thread(target=server)
+server_thread.start()
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-    client_socket.connect((HOST, PORT))
+# Create client
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect(("127.0.0.1", 5000))
 
-    message = input("Enter message: ")
-    client_socket.sendall(message.encode("utf-8"))
+message = input("Enter message: ")
+client_socket.send(message.encode())
 
-    response = client_socket.recv(1024).decode("utf-8")
-    print("Response from server:", response)
+response = client_socket.recv(1024).decode()
+print("Response from server:", response)
+
+client_socket.close()
+server_thread.join()
 ```
 
 ### Execution
