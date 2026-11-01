@@ -705,47 +705,42 @@ To implement UDP client-server communication using Python socket programming.
 
 Save the following as two separate files.
 
-### File 1: `server.py`
+### File 1: `UDP.py`
 
 ```python
 import socket
+import threading
 
-HOST = "127.0.0.1"
-PORT = 5000
-
-with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
-    server_socket.bind((HOST, PORT))
-    print("UDP Server is waiting for a message...")
+def server():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.bind(("127.0.0.1", 5000))
 
     message, address = server_socket.recvfrom(1024)
-    print("Message from client:", message.decode("utf-8"))
+    print("Message from client:", message.decode())
 
     response = "Hello Client, message received!"
-    server_socket.sendto(response.encode("utf-8"), address)
-```
+    server_socket.sendto(response.encode(), address)
 
-### File 2: `client.py`
+    server_socket.close()
 
-```python
-import socket
 
-HOST = "127.0.0.1"
-PORT = 5000
+# Start server
+server_thread = threading.Thread(target=server)
+server_thread.start()
 
-with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
-    # The OS automatically assigns a temporary source port to this client.
-    client_socket.settimeout(5.0)
+# Create client
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+message = input("Enter message: ")
 
-    message = input("Enter message: ")
+# Send message to server
+client_socket.sendto(message.encode(), ("127.0.0.1", 5000))
 
-    # Send message to the server's destination port 5000
-    client_socket.sendto(message.encode("utf-8"), (HOST, PORT))
+# Receive response
+response, address = client_socket.recvfrom(1024)
+print("Response from server:", response.decode())
 
-    try:
-        response, address = client_socket.recvfrom(1024)
-        print("Response from server:", response.decode("utf-8"))
-    except socket.timeout:
-        print("No response received. Check that the UDP server is running.")
+client_socket.close()
+server_thread.join()
 ```
 
 ### Execution
