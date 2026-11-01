@@ -192,52 +192,49 @@ To implement the Cyclic Redundancy Check (CRC) error detection technique using P
 
 ```python
 def crc(data, generator):
-    data = list(data)
-    generator = list(generator)
+    """Return the CRC remainder using modulo-2 (XOR) division."""
+    work = list(data)
+    divisor = list(generator)
 
-    for i in range(len(data) - len(generator) + 1):
-        if data[i] == '1':
-            for j in range(len(generator)):
-                data[i + j] = str(
-                    int(data[i + j]) ^ int(generator[j])
-                )
+    for i in range(len(work) - len(divisor) + 1):
+        if work[i] == "1":
+            for j in range(len(divisor)):
+                work[i + j] = str(int(work[i + j]) ^ int(divisor[j]))
 
-    return ''.join(data[-(len(generator) - 1):])
+    return "".join(work[-(len(divisor) - 1):])
 
 
 # Sender side
-data = input("Enter data bits: ")
-generator = input("Enter generator bits: ")
+data = input("Enter data bits: ").strip()
+generator = input("Enter generator bits: ").strip()
 
-# Basic input validation
-if (not data or not generator or
-        any(bit not in "01" for bit in data + generator) or
-        len(generator) < 2 or generator[0] != '1'):
-    raise ValueError("Enter valid binary data and generator bits.")
+if not data or any(bit not in "01" for bit in data):
+    raise ValueError("Data must contain only 0 and 1.")
+if len(generator) < 2 or any(bit not in "01" for bit in generator):
+    raise ValueError("Generator must contain at least two binary bits.")
+if generator[0] != "1":
+    raise ValueError("The first bit of the generator must be 1.")
 
-# Append zeros
-appended_data = data + '0' * (len(generator) - 1)
-
-# Calculate CRC
+# Append zeros and calculate CRC
+appended_data = data + "0" * (len(generator) - 1)
 remainder = crc(appended_data, generator)
-
-# Create transmitted codeword
 codeword = data + remainder
 
 print("\nCRC Remainder:", remainder)
 print("Transmitted Codeword:", codeword)
 
 # Receiver side
-received = input("\nEnter received codeword: ")
+received = input("\nEnter received codeword: ").strip()
 
-if not received or any(bit not in "01" for bit in received):
+if len(received) < len(generator):
+    raise ValueError("Received codeword must be at least as long as the generator.")
+if any(bit not in "01" for bit in received):
     raise ValueError("Received codeword must contain only 0 and 1.")
 
-# Check CRC
 check_remainder = crc(received, generator)
 print("Receiver Remainder:", check_remainder)
 
-if '1' in check_remainder:
+if "1" in check_remainder:
     print("Error detected in received data.")
 else:
     print("No error detected. Data received correctly.")
@@ -286,24 +283,24 @@ To implement Hamming Code for error detection and correction in a data communica
 ## PROGRAM
 
 ```python
-# Hamming Code using even parity
+# Hamming Code using even parity (single-bit error correction)
 
-data = input("Enter data bits: ")
+data = input("Enter data bits: ").strip()
 
 if not data or any(bit not in "01" for bit in data):
     raise ValueError("Enter only binary data bits.")
 
 m = len(data)
 
-# Find number of parity bits
+# Find the number of parity bits
 p = 0
 while 2 ** p < m + p + 1:
     p += 1
 
 n = m + p
-hamming = ['0'] * (n + 1)
+hamming = ["0"] * (n + 1)
 
-# Insert data bits in non-power-of-two positions
+# Insert data bits into non-parity positions (1-based positions)
 j = 0
 for i in range(1, n + 1):
     if i & (i - 1):  # Not a power of 2
@@ -314,36 +311,30 @@ for i in range(1, n + 1):
 for pbit in range(p):
     pos = 2 ** pbit
     parity = 0
-
     for i in range(1, n + 1):
         if i & pos:
             parity ^= int(hamming[i])
-
     hamming[pos] = str(parity)
 
-# Display generated Hamming code
-code = ''.join(hamming[1:])
+code = "".join(hamming[1:])
 print("Hamming Code:", code)
 
-# Receive code
-received = input("Enter received Hamming code: ")
+# Receiver side
+received = input("Enter received Hamming code: ").strip()
 
 if len(received) != n or any(bit not in "01" for bit in received):
     raise ValueError(f"Enter exactly {n} binary bits.")
 
 received = list(received)
-
-# Find error position (syndrome)
 error_pos = 0
 
+# Calculate syndrome
 for pbit in range(p):
     pos = 2 ** pbit
     parity = 0
-
     for i in range(1, n + 1):
         if i & pos:
             parity ^= int(received[i - 1])
-
     if parity:
         error_pos += pos
 
@@ -352,17 +343,15 @@ if error_pos == 0:
     print("No error detected.")
 elif error_pos <= n:
     print("Error detected at position:", error_pos)
-    received[error_pos - 1] = (
-        '1' if received[error_pos - 1] == '0' else '0'
-    )
-    print("Corrected Hamming Code:", ''.join(received))
+    received[error_pos - 1] = "1" if received[error_pos - 1] == "0" else "0"
+    print("Corrected Hamming Code:", "".join(received))
 else:
-    print("Invalid syndrome; error is outside the code length.")
+    raise ValueError("Invalid syndrome; received data may contain multiple errors.")
 
-# Extract data bits
+# Extract data bits from non-parity positions
 data_bits = ""
 for i in range(1, n + 1):
-    if i & (i - 1):  # Skip parity positions
+    if i & (i - 1):
         data_bits += received[i - 1]
 
 print("Corrected Data:", data_bits)
@@ -378,6 +367,8 @@ Error detected at position: 5
 Corrected Hamming Code: 0110011
 Corrected Data: 1011
 ```
+
+Note: This basic Hamming code implementation corrects a single-bit error. It does not reliably detect or correct multiple-bit errors.
 
 ## RESULT
 Thus, the Hamming Code was successfully implemented, and a single-bit error in the received data was detected and corrected.
@@ -406,21 +397,29 @@ import random
 import time
 
 total_frames = int(input("Enter the number of frames: "))
+if total_frames <= 0:
+    raise ValueError("Number of frames must be greater than zero.")
+
 frame = 1
 
 while frame <= total_frames:
-    print(f"\nSending Frame {frame}...")
-    time.sleep(0.5)
+    acknowledged = False
 
-    # Simulate frame/ACK loss
-    if random.choice([True, True, True, False]):
-        print(f"Frame {frame} received successfully.")
+    while not acknowledged:
+        print(f"\nSending Frame {frame}...")
         time.sleep(0.2)
-        print(f"ACK {frame} received.")
-        frame += 1
-    else:
-        print(f"Frame {frame} or ACK {frame} lost!")
-        print("Timeout... Retransmitting the frame.")
+
+        # Simulate frame or ACK loss (25% chance)
+        if random.random() < 0.75:
+            print(f"Frame {frame} received successfully.")
+            time.sleep(0.1)
+            print(f"ACK {frame} received.")
+            acknowledged = True
+        else:
+            print(f"Frame {frame} or ACK {frame} lost!")
+            print("Timeout... Retransmitting the frame.")
+
+    frame += 1
 
 print("\nAll frames transmitted successfully.")
 ```
@@ -498,7 +497,6 @@ if total_frames <= 0 or window_size <= 0:
 base = 1
 
 while base <= total_frames:
-    # Calculate last frame in the current window
     end = min(base + window_size - 1, total_frames)
 
     print("\nCurrent Window:")
@@ -506,24 +504,22 @@ while base <= total_frames:
         print(f"Frame {i}", end=" ")
     print()
 
-    # Send all frames in the current window
+    # Simulate transmission and ACK of each frame in this window
     for i in range(base, end + 1):
-        print(f"\nSending Frame {i}...")
+        acknowledged = False
+        while not acknowledged:
+            print(f"\nSending Frame {i}...")
 
-        # Simulate frame transmission
-        if random.choice([True, True, True, False]):
-            print(f"Frame {i} received.")
-            print(f"ACK {i} received.")
-        else:
-            print(f"Frame {i} lost!")
-            print(f"Timeout for Frame {i}.")
-            print(f"Retransmitting Frame {i}...")
-            print(f"Frame {i} received.")
-            print(f"ACK {i} received.")
+            if random.random() < 0.75:
+                print(f"Frame {i} received.")
+                print(f"ACK {i} received.")
+                acknowledged = True
+            else:
+                print(f"Frame {i} lost or ACK lost!")
+                print(f"Timeout for Frame {i}.")
+                print(f"Retransmitting Frame {i}...")
 
-    # Slide the window after the current group is acknowledged
     base = end + 1
-
     if base <= total_frames:
         print("\nWindow slides forward.")
 
@@ -611,23 +607,22 @@ import socket
 HOST = "127.0.0.1"
 PORT = 5000
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST, PORT))
-server_socket.listen(1)
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen(1)
 
-print("TCP Server is waiting for a connection...")
+    print("TCP Server is waiting for a connection...")
 
-conn, addr = server_socket.accept()
-print("Client connected:", addr)
+    conn, addr = server_socket.accept()
+    with conn:
+        print("Client connected:", addr)
 
-message = conn.recv(1024).decode()
-print("Message from client:", message)
+        message = conn.recv(1024).decode("utf-8")
+        print("Message from client:", message)
 
-response = "Hello Client, message received!"
-conn.sendall(response.encode())
-
-conn.close()
-server_socket.close()
+        response = "Hello Client, message received!"
+        conn.sendall(response.encode("utf-8"))
 ```
 
 ### File 2: `client.py`
@@ -638,16 +633,14 @@ import socket
 HOST = "127.0.0.1"
 PORT = 5000
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((HOST, PORT))
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+    client_socket.connect((HOST, PORT))
 
-message = input("Enter message: ")
-client_socket.sendall(message.encode())
+    message = input("Enter message: ")
+    client_socket.sendall(message.encode("utf-8"))
 
-response = client_socket.recv(1024).decode()
-print("Response from server:", response)
-
-client_socket.close()
+    response = client_socket.recv(1024).decode("utf-8")
+    print("Response from server:", response)
 ```
 
 ### Execution
@@ -666,7 +659,7 @@ Terminal 2:
 python client.py
 ```
 
-Run the server first, then run the client.
+Run the server first, then run the client. The server binds to destination port 5000. The client does not bind to port 5000; the operating system assigns it a temporary source port automatically.
 
 ## OUTPUT
 
@@ -720,18 +713,15 @@ import socket
 HOST = "127.0.0.1"
 PORT = 5000
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server_socket.bind((HOST, PORT))
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
+    server_socket.bind((HOST, PORT))
+    print("UDP Server is waiting for a message...")
 
-print("UDP Server is waiting for a message...")
+    message, address = server_socket.recvfrom(1024)
+    print("Message from client:", message.decode("utf-8"))
 
-message, address = server_socket.recvfrom(1024)
-print("Message from client:", message.decode())
-
-response = "Hello Client, message received!"
-server_socket.sendto(response.encode(), address)
-
-server_socket.close()
+    response = "Hello Client, message received!"
+    server_socket.sendto(response.encode("utf-8"), address)
 ```
 
 ### File 2: `client.py`
@@ -742,18 +732,20 @@ import socket
 HOST = "127.0.0.1"
 PORT = 5000
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
+    # The OS automatically assigns a temporary source port to this client.
+    client_socket.settimeout(5.0)
 
-message = input("Enter message: ")
+    message = input("Enter message: ")
 
-# Send message to server
-client_socket.sendto(message.encode(), (HOST, PORT))
+    # Send message to the server's destination port 5000
+    client_socket.sendto(message.encode("utf-8"), (HOST, PORT))
 
-# Receive response
-response, address = client_socket.recvfrom(1024)
-print("Response from server:", response.decode())
-
-client_socket.close()
+    try:
+        response, address = client_socket.recvfrom(1024)
+        print("Response from server:", response.decode("utf-8"))
+    except socket.timeout:
+        print("No response received. Check that the UDP server is running.")
 ```
 
 ### Execution
@@ -772,7 +764,7 @@ Terminal 2:
 python client.py
 ```
 
-Run the server first, then run the client.
+Run the server first, then run the client. The server binds to UDP port 5000. The client uses an automatically assigned temporary source port, so both files do not bind to the same port.
 
 ## OUTPUT
 
@@ -820,55 +812,52 @@ INF = 999
 
 # Read number of nodes
 n = int(input("Enter the number of nodes: "))
+if n <= 0:
+    raise ValueError("Number of nodes must be greater than zero.")
 
-# Read cost matrix
+# Read the initial link-cost matrix
 print("Enter the cost matrix:")
 print("Enter 999 for no direct connection")
 
 cost = []
 for i in range(n):
     row = list(map(int, input().split()))
-
     if len(row) != n:
         raise ValueError("Each row must contain exactly n values.")
-
+    if any(value < 0 for value in row):
+        raise ValueError("Link costs cannot be negative.")
     cost.append(row)
 
-# Initialize distance table
+# Each node initially knows its direct neighbours and itself
 dist = [row[:] for row in cost]
-
-# Distance from a node to itself is zero
 for i in range(n):
     dist[i][i] = 0
 
-# Update shortest distances
-for k in range(n):
-    for i in range(n):
-        for j in range(n):
-            if dist[i][k] < INF and dist[k][j] < INF:
-                new_cost = dist[i][k] + dist[k][j]
+# Distance Vector updates: exchange routing information until stable
+changed = True
+while changed:
+    changed = False
+    previous = [row[:] for row in dist]
+    updated = [row[:] for row in previous]
 
-                if new_cost < dist[i][j]:
-                    dist[i][j] = new_cost
+    for i in range(n):
+        for destination in range(n):
+            for neighbour in range(n):
+                if i != neighbour and cost[i][neighbour] < INF:
+                    candidate = cost[i][neighbour] + previous[neighbour][destination]
+                    if candidate < updated[i][destination]:
+                        updated[i][destination] = candidate
+                        changed = True
+
+    dist = updated
 
 # Display final distance table
 print("\nFinal Distance Table:")
-print("   ", end="")
-
-for j in range(n):
-    print(f"N{j + 1}\t", end="")
-print()
+print("    " + "  ".join(f"N{j + 1}" for j in range(n)))
 
 for i in range(n):
-    print(f"N{i + 1} ", end="")
-
-    for j in range(n):
-        if dist[i][j] >= INF:
-            print("INF\t", end="")
-        else:
-            print(f"{dist[i][j]}\t", end="")
-
-    print()
+    values = ["INF" if value >= INF else str(value) for value in dist[i]]
+    print(f"N{i + 1}  " + "  ".join(values))
 ```
 
 ## OUTPUT
@@ -930,37 +919,36 @@ INF = 999
 
 # Read number of nodes
 n = int(input("Enter the number of nodes: "))
+if n <= 0:
+    raise ValueError("Number of nodes must be greater than zero.")
 
-# Read cost matrix
+# Read cost/adjacency matrix
 print("Enter the cost matrix:")
 print("Enter 999 for no direct connection")
 
 graph = []
 for i in range(n):
     row = list(map(int, input().split()))
-
     if len(row) != n:
         raise ValueError("Each row must contain exactly n values.")
-
+    if any(value < 0 for value in row):
+        raise ValueError("Dijkstra's algorithm requires non-negative link costs.")
     graph.append(row)
 
 # Read source node (1-based input)
 source = int(input("Enter the source node: ")) - 1
-
 if source < 0 or source >= n:
     raise ValueError("Invalid source node.")
 
-# Initialize distances
 distance = [INF] * n
 visited = [False] * n
 distance[source] = 0
 
-# Dijkstra's algorithm
+# Dijkstra's shortest-path algorithm
 for _ in range(n):
     min_distance = INF
     current = -1
 
-    # Find unvisited node with minimum distance
     for i in range(n):
         if not visited[i] and distance[i] < min_distance:
             min_distance = distance[i]
@@ -971,19 +959,16 @@ for _ in range(n):
 
     visited[current] = True
 
-    # Update distances of neighbouring nodes
-    for j in range(n):
-        if not visited[j] and graph[current][j] != INF:
-            new_distance = distance[current] + graph[current][j]
+    for neighbour in range(n):
+        link_cost = graph[current][neighbour]
+        if not visited[neighbour] and link_cost < INF:
+            new_distance = distance[current] + link_cost
+            if new_distance < distance[neighbour]:
+                distance[neighbour] = new_distance
 
-            if new_distance < distance[j]:
-                distance[j] = new_distance
-
-# Display shortest paths
 print("\nShortest Paths from Node", source + 1)
-
 for i in range(n):
-    if distance[i] == INF:
+    if distance[i] >= INF:
         print(f"Node {source + 1} -> Node {i + 1} : No Path")
     else:
         print(f"Node {source + 1} -> Node {i + 1} : {distance[i]}")
@@ -1244,7 +1229,7 @@ Install Scapy before running:
 python -m pip install scapy
 ```
 
-On Windows, packet capture may also require Npcap. Run the terminal with the required capture permissions.
+On Windows, packet capture may also require Npcap. Run the terminal with the required capture permissions. The program captures 10 IP packets; generate network activity while it is running.
 
 ```python
 from scapy.all import sniff, IP, TCP, UDP, DNS
@@ -1261,10 +1246,8 @@ def analyze_packet(packet):
 
     if DNS in packet:
         service = "DNS"
-
     elif TCP in packet:
         ports = {packet[TCP].sport, packet[TCP].dport}
-
         if 80 in ports:
             service = "HTTP"
         elif 443 in ports:
@@ -1275,9 +1258,12 @@ def analyze_packet(packet):
             service = "FTP"
         else:
             service = "TCP"
-
     elif UDP in packet:
-        service = "UDP"
+        ports = {packet[UDP].sport, packet[UDP].dport}
+        if 53 in ports:
+            service = "DNS"
+        else:
+            service = "UDP"
 
     print("Source IP        :", source)
     print("Destination IP   :", destination)
@@ -1287,8 +1273,14 @@ def analyze_packet(packet):
 
 
 print("Network Traffic Analysis Started")
+print("Generate network traffic (for example, open a website) during capture.")
 
-sniff(prn=analyze_packet, count=10, store=False)
+try:
+    sniff(prn=analyze_packet, count=10, store=False)
+except PermissionError:
+    print("Permission denied. Run the terminal with administrator/root privileges.")
+except Exception as error:
+    print("Packet capture failed:", error)
 
 print("Network Traffic Analysis Completed")
 ```
